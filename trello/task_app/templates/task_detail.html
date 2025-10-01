@@ -1,0 +1,74 @@
+<!-- {{ task.title }} <br>
+{{ task.desc }} <br>
+{{ task.created_at }} <br>
+{{ task.is_done }}
+<br>
+<a href="{% url 'task_delete' task.id %}">Delete</a> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ task.title }}</title>
+    <style>
+        .comment-box { margin: 10px 0; padding: 8px; border-bottom: 1px solid #ddd; }
+        .comment-author { font-weight: bold; }
+        .comment-date { color: gray; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <h1>{{ task.title }}</h1>
+    <p>{{ task.desc }}</p>
+    <p>Status: {{ task.get_status_display }}</p>
+    <p>Created at: {{ task.created_at }}</p>
+
+    <a href="{% url 'task_edit' task.id %}">✏️ Edit</a> |
+    <a href="{% url 'task_delete' task.id %}">🗑️ Delete</a> |
+    <a href="{% url 'task_list_or_create' %}">⬅ Back to board</a>
+
+    <hr>
+
+    <div id="comments">
+        {% for comment in comments %}
+        <div class="comment-box" id="comment-{{ comment.id }}">
+            <span class="comment-author">{{ comment.author.username }}</span>
+            <span class="comment-date">({{ comment.created_at|date:"Y-m-d H:i" }})</span>
+            <p>{{ comment.text }}</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <textarea id="comment-text" rows="3" placeholder="Write a comment..."></textarea><br>
+    <button onclick="addComment()">💬 Add Comment</button>
+
+    <script>
+        function addComment() {
+            const text = document.getElementById("comment-text").value;
+            if (!text.trim()) return alert("Enter a comment");
+
+            fetch("{% url 'add_comment' task.id %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify({ text: text })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    const div = document.createElement("div");
+                    div.classList.add("comment-box");
+                    div.innerHTML = `<span class="comment-author">${data.author}</span>
+                                     <span class="comment-date">(${data.created_at})</span>
+                                     <p>${data.text}</p>`;
+                    document.getElementById("comments").prepend(div);
+                    document.getElementById("comment-text").value = "";
+                }
+            });
+        }
+    </script>
+</body>
+</html>

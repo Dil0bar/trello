@@ -1,0 +1,24 @@
+- One To One, ForenKey and ManyToMany
+- Template
+- CRUD (Create, Read (List, Detail), Update and Delete)
+
+
+- Model
+    Task
+        - title
+        - desc
+        - owner (who created task)
+        - created_at
+        - users (who completad)
+        - dua_start_at
+        - dua_end_date
+
+        - is_done 
+
+    User
+        - username
+    
+Template
+    CRUD
+
+    
