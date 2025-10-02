@@ -1,6 +1,6 @@
 from django.urls import path
-from . import views
 
+from . import views
 from .views import task_delete, task_detail, task_list_or_create, update_task_status
 
 urlpatterns = [
@@ -11,5 +11,8 @@ urlpatterns = [
     path('update-task-status/', update_task_status, name='update_task_status'),
     path("task/<int:task_id>/comment/", views.add_comment, name="add_comment"),
 
+    path('register/', views.register, name='register'),  # New registration path
+    path('login/', views.user_login, name='login'),  # New login path
+    path('logout/', views.user_logout, name='logout'),  # New logout path
 
 ]

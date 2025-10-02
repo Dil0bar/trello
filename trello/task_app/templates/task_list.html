@@ -1,82 +1,23 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Task Board</title>
+    <link rel="stylesheet" href="{% static 'task_list.css' %}">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f5f6fa;
-            margin: 0;
-            padding: 20px;
-        }
-        h2 { text-align: center; }
-
-        .board {
-            display: flex;
-            justify-content: space-around;
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .column {
-            background: #fff;
-            padding: 10px;
-            border-radius: 8px;
-            width: 30%;
-            min-height: 300px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .column h3 {
-            text-align: center;
-            margin-bottom: 10px;
-        }
-
-        .task {
-            background: #f1f2f6;
-            margin: 8px 0;
-            padding: 10px;
-            border-radius: 6px;
-            cursor: grab;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .task:hover {
-            background: #dcdde1;
-        }
-
-        form {
-            display: flex;
-            flex-direction: column;
-            margin: 20px auto;
-            max-width: 400px;
-            gap: 10px;
-        }
-
-        form input, form textarea, form button {
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            font-size: 14px;
-        }
-
-        form button {
-            background: #4cd137;
-            color: white;
-            font-weight: bold;
-            border: none;
-            cursor: pointer;
-        }
-
-        form button:hover {
-            background: #44bd32;
-        }
-    </style>
 </head>
+
 <body>
+
     <h2>📌 My Task Board</h2>
+    {% if user.is_authenticated %}
+    <h2>Welcome, {{ user.username }}! <a href="{% url 'logout' %}">Logout</a></h2>
+    {% else %}
+    <h2><a href="{% url 'login' %}">Login</a> | <a href="{% url 'register' %}">Register</a></h2>
+    {% endif %}
 
     <!-- форма добавления -->
     <form method="post">
@@ -88,63 +29,85 @@
 
     <!-- колонки -->
     <div class="board">
-        <div class="column" id="todo" id="todo" ondrop="drop(event)" ondragover="allowDrop(event)">
+        <!-- To Do -->
+        <div class="column" id="todo">
             <h3>📝 To Do</h3>
-            {% for task in tasks %}
+            <div class="task-list">
+                {% for task in tasks %}
                 {% if task.status == "todo" %}
-                    <div class="task" id="task-{{ task.id }}" draggable="true" ondragstart="drag(event)"
-                         onclick="window.location.href='{% url 'task_detail' task.id %}'">
-                        <div class="title">{{ forloop.counter }} . {{ task.title }}</div>
-                        <div class="description">{{ task.desc }}</div>
-                    </div>
+                <div class="task" id="task-{{ task.id }}" data-id="{{ task.id }}" draggable="true"
+                    onclick="window.location.href='{% url 'task_detail' task.id %}'">
+                    <div class="title">{{ task.position }} . {{ task.title }}</div>
+                    <div class="description">{{ task.desc }}</div>
+                </div>
                 {% endif %}
-            {% endfor %}
+                {% endfor %}
+            </div>
         </div>
 
-        <div class="column" id="progress" ondrop="drop(event)" ondragover="allowDrop(event)">
+        <!-- In Progress -->
+        <div class="column" id="progress">
             <h3>⚡ In Progress</h3>
-            {% for task in tasks %}
+            <div class="task-list">
+                {% for task in tasks %}
                 {% if task.status == "progress" %}
-                    <div class="task" id="task-{{ task.id }}" draggable="true" ondragstart="drag(event)"
-                         onclick="window.location.href='{% url 'task_detail' task.id %}'">
-                        <div class="title">{{ forloop.counter }} . {{ task.title }}</div>
-                        <div class="description">{{ task.desc }}</div>
-                    </div>
+                <div class="task" id="task-{{ task.id }}" data-id="{{ task.id }}" draggable="true"
+                    onclick="window.location.href='{% url 'task_detail' task.id %}'">
+                    <div class="title">{{ task.position }} . {{ task.title }}</div>
+                    <div class="description">{{ task.desc }}</div>
+                </div>
                 {% endif %}
-            {% endfor %}
+                {% endfor %}
+            </div>
         </div>
 
-        <div class="column" id="done" ondrop="drop(event)" ondragover="allowDrop(event)">
+        <!-- Done -->
+        <div class="column" id="done">
             <h3>✅ Done</h3>
-            {% for task in tasks %}
+            <div class="task-list">
+                {% for task in tasks %}
                 {% if task.status == "done" %}
-                    <div class="task" id="task-{{ task.id }}" draggable="true" ondragstart="drag(event)"
-                         onclick="window.location.href='{% url 'task_detail' task.id %}'">
-                        <div class="title">{{ forloop.counter }} . {{ task.title }}</div>
-                        <div class="description">{{ task.desc }}</div>
-                    </div>
+                <div class="task" id="task-{{ task.id }}" data-id="{{ task.id }}" draggable="true"
+                    onclick="window.location.href='{% url 'task_detail' task.id %}'">
+                    <div class="title">{{ task.position }} . {{ task.title }}</div>
+                    <div class="description">{{ task.desc }}</div>
+                </div>
                 {% endif %}
-            {% endfor %}
+                {% endfor %}
+            </div>
         </div>
     </div>
 
     <script>
-        // Функция для инициализации SortableJS
+        // Функция обновления порядковых номеров в колонке
+        function updatePositions(column) {
+            column.querySelectorAll(".task").forEach((el, index) => {
+                const titleEl = el.querySelector(".title");
+                if (titleEl) {
+                    const taskTitle = titleEl.textContent.split(".").slice(1).join(".").trim();
+                    titleEl.textContent = (index + 1) + " . " + taskTitle;
+                }
+            });
+        }
+
+        // Функция инициализации SortableJS для колонок
         function initSortable(columnId) {
-            return new Sortable(document.getElementById(columnId), {
+            const list = document.querySelector(`#${columnId} .task-list`);
+
+            return new Sortable(list, {
                 group: 'shared',
                 animation: 150,
                 onEnd: function (evt) {
-                    const taskId = evt.item.dataset.id;
-                    const newStatus = evt.to.id;
-
-                    // собираем порядок
+                    const taskId = evt.item.dataset.id;                 // ID таска
+                    const newStatus = evt.to.closest(".column").id;     // колонка
                     const order = [];
+
                     evt.to.querySelectorAll(".task").forEach((el, index) => {
-                        order.push({id: el.dataset.id, position: index});
+                        order.push({ id: el.dataset.id, position: index + 1 });
                     });
 
-                    // запрос к серверу
+                    console.log("Task moved:", { taskId, newStatus, order });
+
                     fetch("/update-task-status/", {
                         method: "POST",
                         headers: {
@@ -156,15 +119,22 @@
                             new_status: newStatus,
                             order: order
                         })
-                    }).then(res => res.json())
-                      .then(data => console.log(data))
-                      .catch(err => console.error(err));
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            console.log("Response:", data);
+
+                            // обновляем номера в колонке, куда перетащили
+                            updatePositions(evt.to);
+                        })
+                        .catch(err => console.error("Error:", err));
                 }
             });
         }
 
-        // инициализация для всех колонок
+        // Запускаем для всех колонок
         ["todo", "progress", "done"].forEach(initSortable);
     </script>
 </body>
+
 </html>
